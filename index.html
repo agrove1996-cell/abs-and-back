@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Abs & Back">
+  <link rel="manifest" href="manifest.json">
+  <title>Abs & Back</title>
+  <style>
+    :root { --blue:#19bff0; --orange:#ff8617; --ink:#111; --muted:#8b8b8b; --line:#e9e9e9; }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { margin:0; min-height:100%; background:#fff; color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Arial,sans-serif; }
+    button { font:inherit; }
+    .screen { display:none; min-height:100dvh; }
+    .screen.active { display:flex; }
+    #home { padding:calc(38px + env(safe-area-inset-top)) 22px calc(26px + env(safe-area-inset-bottom)); flex-direction:column; }
+    .brand { margin-top:4vh; }
+    .brand h1 { font-size:44px; line-height:.95; margin:0 0 12px; letter-spacing:-2px; }
+    .brand p { margin:0; color:#6c6c6c; font-size:18px; }
+    .choices { display:grid; gap:18px; margin:auto 0; }
+    .choice { border:0; border-radius:28px; min-height:170px; padding:28px; text-align:left; box-shadow:0 8px 30px rgba(0,0,0,.08); background:#fafafa; }
+    .choice.abs { border-top:7px solid var(--orange); }
+    .choice.back { border-top:7px solid var(--blue); }
+    .choice b { display:block; font-size:38px; letter-spacing:-1px; }
+    .choice span { display:block; margin-top:8px; font-size:18px; color:#666; }
+    .foot { text-align:center; color:#999; font-size:13px; }
+
+    #workout { flex-direction:column; overflow:hidden; }
+    .top { padding:calc(12px + env(safe-area-inset-top)) 18px 12px; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; border-bottom:1px solid #ddd; }
+    .end { border:0; background:none; text-align:left; font-size:22px; color:#555; padding:8px 0; }
+    .total { font-size:30px; color:#888; font-variant-numeric:tabular-nums; }
+    .topright { text-align:right; font-size:23px; }
+    .bar { height:7px; background:var(--orange); width:100%; transform-origin:left; }
+    .stage { flex:1; display:flex; flex-direction:column; align-items:center; padding:28px 20px 18px; text-align:center; }
+    .name { font-size:42px; line-height:1.02; letter-spacing:-1.5px; min-height:88px; display:flex; align-items:center; justify-content:center; }
+    .status { color:var(--blue); font-size:25px; font-weight:600; margin-top:-4px; min-height:32px; }
+    .figure { width:min(78vw,430px); flex:1; min-height:220px; display:flex; align-items:center; justify-content:center; }
+    .figure svg { width:100%; height:auto; max-height:42vh; }
+    .timer { width:145px; height:145px; border-radius:50%; background:conic-gradient(var(--blue) 0deg, #eee 0deg); display:grid; place-items:center; margin:10px 0 24px; }
+    .timer::before { content:""; width:125px; height:125px; border-radius:50%; background:white; position:absolute; }
+    .seconds { position:relative; z-index:1; color:var(--blue); font-size:68px; font-weight:300; font-variant-numeric:tabular-nums; }
+    .controls { height:104px; display:grid; grid-template-columns:1fr 1fr 1fr; border-top:1px solid #ddd; padding-bottom:env(safe-area-inset-bottom); }
+    .controls button { border:0; border-right:1px solid #ddd; background:#fafafa; font-size:44px; color:#444; }
+    .controls button:last-child { border-right:0; }
+    .controls .play { color:var(--blue); font-size:50px; }
+    .done { justify-content:center; }
+    .done .name { font-size:48px; }
+    .done .figure { flex:0 0 220px; }
+    .donebtn { border:0; border-radius:22px; padding:20px 35px; background:#111; color:white; font-size:22px; margin-top:18px; }
+
+    @media (max-height:700px) {
+      .stage { padding-top:14px; }
+      .name { font-size:34px; min-height:68px; }
+      .figure { min-height:150px; }
+      .timer { width:110px;height:110px; margin:4px 0 12px; }
+      .timer::before { width:94px;height:94px; }
+      .seconds { font-size:52px; }
+      .controls { height:86px; }
+    }
+  </style>
+</head>
+<body>
+<section id="home" class="screen active">
+  <div class="brand">
+    <h1>Abs & Back</h1>
+    <p>Four minutes. No faffing.</p>
+  </div>
+  <div class="choices">
+    <button class="choice abs" onclick="startRoutine('abs')"><b>ABS</b><span>2 minutes · your four exercises</span></button>
+    <button class="choice back" onclick="startRoutine('back')"><b>BACK</b><span>2 minutes · four random exercises</span></button>
+  </div>
+  <div class="foot">30 seconds each · sound + vibration cues</div>
+</section>
+
+<section id="workout" class="screen">
+  <div class="top">
+    <button class="end" onclick="goHome()">End</button>
+    <div class="total" id="total">2:00</div>
+    <div class="topright">♪</div>
+  </div>
+  <div class="bar" id="bar"></div>
+  <div class="stage" id="stage">
+    <div class="name" id="name"></div>
+    <div class="status" id="status">GET READY</div>
+    <div class="figure" id="figure"></div>
+    <div class="timer" id="timer"><div class="seconds" id="seconds">5</div></div>
+  </div>
+  <div class="controls">
+    <button onclick="prev()">◀◀</button>
+    <button class="play" id="play" onclick="toggle()">▶</button>
+    <button onclick="next()">▶▶</button>
+  </div>
+</section>
+
+<script>
+const SVG = {
+ crunch:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d="M95 230h310"/><circle cx="205" cy="105" r="24"/><path d="M225 122q45 25 60 70M227 130l-50 55M282 190l62 5 40 35M281 191l-65 35-55 2"/></g><text x="250" y="278" text-anchor="middle" font-size="18" fill="#888">feet elevated · curl up</text></svg>`,
+ twist:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d="M80 235h340"/><circle cx="208" cy="105" r="24"/><path d="M225 124q55 28 72 76M225 135l-60 58M294 198l60-5 42 38M294 198l-65 33-60 2"/><path d="M205 145q40 8 70 35" stroke="#19bff0"/></g><text x="250" y="278" text-anchor="middle" font-size="18" fill="#888">alternate shoulder toward opposite knee</text></svg>`,
+ bicycle:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d="M80 235h340"/><circle cx="150" cy="165" r="22"/><path d="M170 178l85 22M250 199l72-60 54 30M252 200l58 20 73-35M174 175l25-35M174 176l-38-15"/></g><path d="M292 120q45-35 90 4" fill="none" stroke="#19bff0" stroke-width="6" stroke-dasharray="8 8"/><text x="250" y="278" text-anchor="middle" font-size="18" fill="#888">slow alternating bicycle</text></svg>`,
+ hundred:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d="M80 235h340"/><circle cx="145" cy="170" r="22"/><path d="M165 180l95 20M257 199l70-42 75 22M177 187l-18 38M177 187l35 35"/></g><g stroke="#19bff0" stroke-width="5"><path d="M180 215v-24M200 220v-24M220 223v-24"/></g><text x="250" y="278" text-anchor="middle" font-size="18" fill="#888">legs long · pump arms</text></svg>`,
+ side:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="250" cy="70" r="22"/><path d="M250 94q-5 55-30 105M244 112l-48 75M244 111l35-82M221 199l-25 54M221 199l40 54"/></g></svg>`,
+ plank:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="350" cy="115" r="22"/><path d="M330 128L220 165 125 205M226 164l35 66M128 205l-15 30M258 230h35"/></g></svg>`,
+ lower:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="180" cy="120" r="22"/><path d="M197 137l70 55M267 192l72-42M267 192l70 25M198 145l-35 75M163 220h-38"/></g></svg>`,
+ hipflex:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="250" cy="65" r="22"/><path d="M250 88v95M250 120l-35 50M250 120l35 50M250 183l-72 2-50 50M250 183l45 48 80 4"/></g></svg>`,
+ hipraise:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="120" cy="205" r="22"/><path d="M142 203l120-45 78 28M260 158l-18 70M340 186l45 45M242 228h-50M385 231h35"/></g></svg>`,
+ quad:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="255" cy="110" r="22"/><path d="M250 133v70M250 150l-85-52M250 150l88 35M250 202l-70 30M250 202l72 30"/></g><path d="M165 98l-70-32M322 232l78 15" stroke="#19bff0" stroke-width="10" stroke-linecap="round"/></svg>`,
+ spinal:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="105" cy="210" r="22"/><path d="M128 210l135-8M260 202l70-70M260 202l95 20M160 207l-25-45M160 207l-20 42"/></g></svg>`,
+ genie:`<svg viewBox="0 0 500 300"><g fill="none" stroke="#111" stroke-width="13" stroke-linecap="round"><circle cx="250" cy="70" r="22"/><path d="M250 93q-20 65 10 125M235 115l70 30M275 115l-70 30M260 218l-50 28M260 218l50 28"/></g></svg>`
+};
+
+const abs = [
+ {name:"Elevated Crunches", fig:"crunch"},
+ {name:"Twisting Crunches", fig:"twist"},
+ {name:"Supine Bicycle", fig:"bicycle"},
+ {name:"The Hundred", fig:"hundred"}
+];
+const backPool = [
+ {name:"Side Stretch", fig:"side"}, {name:"Plank", fig:"plank"},
+ {name:"Lower Back Stretch", fig:"lower"}, {name:"Kneeling Hip Flexor", fig:"hipflex"},
+ {name:"Hip Raise", fig:"hipraise"}, {name:"Quadraplex", fig:"quad"},
+ {name:"Laying Spinal Twist", fig:"spinal"}, {name:"Genie Sit", fig:"genie"}
+];
+
+let routine=[], idx=0, phase="ready", left=5, running=false, tick=null, endAt=0, audioCtx=null;
+
+function shuffled(a){ let x=[...a]; for(let i=x.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1)); [x[i],x[j]]=[x[j],x[i]];} return x; }
+function startRoutine(type){
+  routine = type==="abs" ? [...abs] : shuffled(backPool).slice(0,4);
+  idx=0; phase="ready"; left=5; running=false;
+  document.getElementById("home").classList.remove("active");
+  document.getElementById("workout").classList.add("active");
+  render(); start();
+}
+function render(){
+  let e=routine[idx];
+  document.getElementById("name").textContent=e.name;
+  document.getElementById("figure").innerHTML=SVG[e.fig];
+  document.getElementById("status").textContent=phase==="ready"?"GET READY":"";
+  document.getElementById("seconds").textContent=Math.max(0,Math.ceil(left));
+  document.getElementById("play").textContent=running?"❚❚":"▶";
+  let deg = phase==="ready" ? (1-left/5)*360 : (1-left/30)*360;
+  document.getElementById("timer").style.background=`conic-gradient(var(--blue) ${deg}deg,#eee ${deg}deg)`;
+  let remaining = phase==="ready" ? 120 : (routine.length-idx-1)*30 + left;
+  let secs=Math.max(0,Math.ceil(remaining));
+  document.getElementById("total").textContent=`${Math.floor(secs/60)}:${String(secs%60).padStart(2,"0")}`;
+  document.getElementById("bar").style.transform=`scaleX(${1-(remaining/120)})`;
+}
+function ensureAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==="suspended") audioCtx.resume(); }
+function beep(freq=880,dur=.12){ try{ensureAudio(); let o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;o.connect(g);g.connect(audioCtx.destination);g.gain.setValueAtTime(.12,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+dur);o.start();o.stop(audioCtx.currentTime+dur);}catch(e){} }
+function cue(){ beep(); if(navigator.vibrate) navigator.vibrate(80); }
+function start(){
+  ensureAudio(); running=true; document.getElementById("play").textContent="❚❚";
+  endAt=performance.now()+left*1000;
+  clearInterval(tick); tick=setInterval(update,100);
+}
+function update(){
+  if(!running)return;
+  left=(endAt-performance.now())/1000;
+  if(left<=0){
+    if(phase==="ready"){ phase="work"; left=30; cue(); endAt=performance.now()+30000; }
+    else if(idx<routine.length-1){ idx++; left=30; cue(); endAt=performance.now()+30000; }
+    else { finish(); return; }
+  }
+  render();
+}
+function toggle(){
+  if(running){ left=Math.max(0,(endAt-performance.now())/1000); running=false; clearInterval(tick); render(); }
+  else start();
+}
+function next(){ if(idx<routine.length-1){ idx++; phase="work"; left=30; cue(); if(running) endAt=performance.now()+30000; render(); } }
+function prev(){ if(idx>0){ idx--; phase="work"; left=30; if(running) endAt=performance.now()+30000; render(); } }
+function finish(){
+  clearInterval(tick); running=false; cue(); setTimeout(()=>beep(1100,.18),180);
+  document.getElementById("stage").classList.add("done");
+  document.getElementById("stage").innerHTML=`<div class="name">Done ✓</div><div class="status">2 minutes finished</div><div class="figure"><svg viewBox="0 0 300 220"><circle cx="150" cy="105" r="70" fill="none" stroke="#19bff0" stroke-width="12"/><path d="M112 106l25 27 54-62" fill="none" stroke="#19bff0" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg></div><button class="donebtn" onclick="goHome()">Back to workouts</button>`;
+  document.querySelector(".controls").style.display="none";
+  document.getElementById("total").textContent="0:00";
+  document.getElementById("bar").style.transform="scaleX(1)";
+}
+function goHome(){
+  clearInterval(tick); running=false;
+  location.reload();
+}
+if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body></html>
